@@ -47,12 +47,15 @@
               <span class="votes">★ <%= l.votes %></span>
               <button class="vote-link" data-dir="up">+1</button>
               <button class="vote-link" data-dir="down">-1</button>
-
+              
+               <!-- Editar enlace  -->
               <form action="/links/<%= l.id %>/edit" method="post" class="inline">
                 <input name="title" value="<%= l.title %>" />
                 <input name="url" value="<%= l.url %>" />
                 <button>Guardar</button>
               </form>
+
+               <!-- Eliminar enlace  -->
               <form action="/links/<%= l.id %>/delete" method="post" class="inline">
                 <button>Eliminar</button>
               </form>

@@ -1,7 +1,7 @@
 import express from 'express';
 import path from 'path';
 import './db.js';             
-import { Topic } from './models/topic.js';
+import router from './routes/index.js'; 
 
 const app = express();
 
@@ -17,11 +17,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Ruta get consultado base de datos
-app.get('/', (req, res) => {
-  const topics = Topic.allWithLinksSorted();
-  res.render('index', { topics });
-});
+// todas las rutas
+app.use('/', router);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
