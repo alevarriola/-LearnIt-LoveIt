@@ -19,5 +19,10 @@ export const Link = {
 
   remove(id) {
     db.prepare(`DELETE FROM links WHERE id = ?`).run(id);
+  },
+
+  vote(id, delta) {
+  db.prepare(`UPDATE links SET votes = votes + ? WHERE id = ?`).run(delta, id);
+  return db.prepare(`SELECT * FROM links WHERE id = ?`).get(id);
   }
 };

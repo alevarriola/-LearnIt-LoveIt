@@ -16,8 +16,8 @@
         <span class="votes">★ <%= t.votes %></span>
         
         <!-- Botones de voto -->
-        <button class="vote-topic" data-dir="up">+1</button>
-        <button class="vote-topic" data-dir="down">-1</button>
+        <button class="vote-topic" data-dir="up">+</button>
+        <button class="vote-topic" data-dir="down">-</button>
 
         <!-- Editar / Eliminar -->
         <form action="/topics/<%= t.id %>/edit" method="post" class="inline">
@@ -45,8 +45,8 @@
             <li class="link" data-id="<%= l.id %>" data-votes="<%= l.votes %>">
               <a href="<%= l.url %>" target="_blank" rel="noreferrer noopener"><%= l.title %></a>
               <span class="votes">★ <%= l.votes %></span>
-              <button class="vote-link" data-dir="up">+1</button>
-              <button class="vote-link" data-dir="down">-1</button>
+              <button class="vote-link" data-dir="up">+</button>
+              <button class="vote-link" data-dir="down">-</button>
               
                <!-- Editar enlace  -->
               <form action="/links/<%= l.id %>/edit" method="post" class="inline">

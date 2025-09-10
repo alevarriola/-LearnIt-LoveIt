@@ -30,13 +30,13 @@ if (getCountTopics === 0) {
   const insertLink  = db.prepare(`INSERT INTO links (topic_id, title, url, votes) VALUES (?, ?, ?, ?)`);
 
   // Tema 1
-  const info1 = insertTopic.run('Node.js', 1);
+  const info1 = insertTopic.run('Cómo programar como un ninja', 1);
   insertLink.run(info1.lastInsertRowid, 'Node docs', 'https://nodejs.org/en/docs', 1);
 
   // Tema 2
-  const info2 = insertTopic.run('JavaScript', 3);
-  insertLink.run(info2.lastInsertRowid, 'MDN Array methods', 'https://developer.mozilla.org/', 2);
-  insertLink.run(info2.lastInsertRowid, 'You Don’t Know JS', 'https://github.com/getify/You-Dont-Know-JS', 1);
+  const info2 = insertTopic.run('Dominar el arte de preparar café', 3);
+  insertLink.run(info2.lastInsertRowid, 'Juan Valdez', 'https://juanvaldez.com/', 2);
+  insertLink.run(info2.lastInsertRowid, 'Cafe Martinez', 'https://www.cafemartinez.com/', 1);
 
   console.log('Seed inicial insertado');
 }

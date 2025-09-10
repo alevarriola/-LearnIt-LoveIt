@@ -19,6 +19,12 @@ export const Topic = {
 
   remove(id) {
     db.prepare(`DELETE FROM topics WHERE id = ?`).run(id);
+  },
+
+  vote(id, delta) {
+  db.prepare(`UPDATE topics SET votes = votes + ? WHERE id = ?`).run(delta, id);
+  return db.prepare(`SELECT * FROM topics WHERE id = ?`).get(id);
   }
+
 };
 

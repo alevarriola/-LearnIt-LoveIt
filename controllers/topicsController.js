@@ -50,5 +50,22 @@ export const TopicsController = {
     const { id } = req.params;
     Link.remove(Number(id));
     res.redirect('/');
+  },
+
+  // ---- VOTES ----
+  voteTopic(req, res) {
+    const { id } = req.params;
+    const { dir } = req.query;         // "up" | "down"
+    const delta = dir === 'down' ? -1 : 1;
+    const updated = Topic.vote(Number(id), delta);
+    res.json({ ok: true, topic: updated });
+  },
+
+  voteLink(req, res) {
+    const { id } = req.params;
+    const { dir } = req.query;         // "up" | "down"
+    const delta = dir === 'down' ? -1 : 1;
+    const updated = Link.vote(Number(id), delta);
+    res.json({ ok: true, link: updated });
   }
 };

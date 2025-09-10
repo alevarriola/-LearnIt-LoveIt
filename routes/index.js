@@ -16,4 +16,8 @@ router.post('/links', TopicsController.createLink);
 router.post('/links/:id/edit', TopicsController.updateLink);
 router.post('/links/:id/delete', TopicsController.deleteLink);
 
+// Votaciones
+router.post('/topics/:id/vote', TopicsController.voteTopic);
+router.post('/links/:id/vote', TopicsController.voteLink);
+
 export default router;
