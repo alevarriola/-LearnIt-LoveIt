@@ -55,3 +55,17 @@ input, button {
 button { 
     cursor: pointer; 
 }
+
+button[disabled] { 
+    opacity: .5; 
+    cursor: not-allowed; 
+}
+
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+  padding: 10px 14px; border-radius: 8px; background: #111; color: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.2); max-width: 90vw; z-index: 9999;
+}
+.toast.hidden { display: none; }
+.toast.ok { background: #0a7f3f; }     /* éxito */
+.toast.err { background: #b00020; }    /* error */
