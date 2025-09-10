@@ -1,0 +1,67 @@
+<%- include('partials/header') %>
+
+<h1>Temas</h1>
+
+<!-- Formulario para crear un tema -->
+<form action="/topics" method="post" class="row">
+  <input type="text" name="title" placeholder="Nuevo tema..." required />
+  <button>Crear</button>
+</form>
+
+<ul id="topics-list">
+  <% (topics || []).forEach(t => { %>
+    <li class="topic" data-id="<%= t.id %>" data-votes="<%= t.votes %>">
+      <div class="row">
+        <strong><%= t.title %></strong>
+        <span class="votes">★ <%= t.votes %></span>
+        
+        <!-- Botones de voto -->
+        <button class="vote-topic" data-dir="up">+1</button>
+        <button class="vote-topic" data-dir="down">-1</button>
+
+        <!-- Editar / Eliminar -->
+        <form action="/topics/<%= t.id %>/edit" method="post" class="inline">
+          <input name="title" value="<%= t.title %>" />
+          <button>Guardar</button>
+        </form>
+        <form action="/topics/<%= t.id %>/delete" method="post" class="inline">
+          <button>Eliminar</button>
+        </form>
+      </div>
+
+      <details>
+        <summary>Enlaces</summary>
+
+        <!-- Crear enlace  -->
+        <form action="/links" method="post" class="row">
+          <input type="hidden" name="topic_id" value="<%= t.id %>" />
+          <input name="title" placeholder="Título del enlace" required />
+          <input name="url" placeholder="https://..." required />
+          <button>Agregar</button>
+        </form>
+
+        <ul class="links">
+          <% (t.links || []).forEach(l => { %>
+            <li class="link" data-id="<%= l.id %>" data-votes="<%= l.votes %>">
+              <a href="<%= l.url %>" target="_blank" rel="noreferrer noopener"><%= l.title %></a>
+              <span class="votes">★ <%= l.votes %></span>
+              <button class="vote-link" data-dir="up">+1</button>
+              <button class="vote-link" data-dir="down">-1</button>
+
+              <form action="/links/<%= l.id %>/edit" method="post" class="inline">
+                <input name="title" value="<%= l.title %>" />
+                <input name="url" value="<%= l.url %>" />
+                <button>Guardar</button>
+              </form>
+              <form action="/links/<%= l.id %>/delete" method="post" class="inline">
+                <button>Eliminar</button>
+              </form>
+            </li>
+          <% }) %>
+        </ul>
+      </details>
+    </li>
+  <% }) %>
+</ul>
+
+<%- include('partials/footer') %>

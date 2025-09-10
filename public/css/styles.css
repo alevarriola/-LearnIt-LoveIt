@@ -1,0 +1,57 @@
+body { 
+    font-family: system-ui, sans-serif; 
+    margin: 24px;
+ }
+
+.container { 
+    max-width: 960px; 
+    margin: 0 auto; 
+}
+
+h1 { 
+    margin-top: 0; 
+}
+
+.row { 
+    display: flex;
+    gap: .5rem; 
+    align-items: center; 
+    margin: .5rem 0; 
+    flex-wrap: wrap; 
+}
+
+.inline { 
+    display: inline-flex; 
+    gap: .25rem; 
+    margin-left: .5rem; 
+}
+
+ul { 
+    list-style: none; 
+    padding-left: 0; 
+}
+
+.topic, .link { 
+    padding: .5rem; 
+    border: 1px solid #ddd; 
+    border-radius: 8px; 
+    margin: .5rem 0; 
+}
+
+.votes { 
+    margin-left: .5rem; 
+    opacity: .85; 
+}
+
+details summary { 
+    cursor: pointer; 
+    margin-top: .25rem; 
+}
+
+input, button { 
+    padding: .45rem .6rem; 
+
+}
+button { 
+    cursor: pointer; 
+}
