@@ -17,8 +17,8 @@ export const TopicsController = {
   },
 
   updateTopic(req, res) {
-    const { id } = req.params;
-    const { title } = req.body;
+    const { id } = req.params; // del url (y query lo que viene luego del ?)
+    const { title } = req.body; // del input 
     if (!title || !title.trim()) return res.redirect('/');
     Topic.update({ id: Number(id), title: title.trim() });
     res.redirect('/');
@@ -33,7 +33,7 @@ export const TopicsController = {
   // ---- LINKS ----
   createLink(req, res) {
     const { topic_id, title, url } = req.body;
-    if (!title?.trim() || !url?.trim()) return res.redirect('/');
+    if (!title?.trim() || !url?.trim()) return res.redirect('/'); // el ? primero verifica el ! y luego hace el trim
     Link.create({ topic_id: Number(topic_id), title: title.trim(), url: url.trim() });
     res.redirect('/');
   },
