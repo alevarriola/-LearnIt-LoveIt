@@ -1,32 +1,42 @@
 // Utilidades UI 
 const $ = (sel, root=document) => root.querySelector(sel);
 
+// desocultar el toast
 function showToast(msg, kind='ok', ms=2000) {
   const box = $('#toast');
   if (!box) return alert(msg); // fallback
+
   box.textContent = msg;
   box.classList.remove('hidden', 'ok', 'err');
   box.classList.add(kind === 'err' ? 'err' : 'ok');
+
   setTimeout(() => box.classList.add('hidden'), ms);
 }
 
+// para no abusar de clicks
 function setBusy(el, busy=true) {
   if (!el) return;
   if (busy) {
     el.setAttribute('disabled', 'true');
     el.dataset.busy = '1';
-  } else {
+  } 
+  else {
     el.removeAttribute('disabled');
     delete el.dataset.busy;
   }
 }
 
+// funcion asincrona para obtener data de post
 async function postJSON(url, body=null) {
   const opts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+
   if (body) opts.body = JSON.stringify(body);
   const res = await fetch(url, opts);
+
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
   const data = await res.json().catch(() => ({}));
+
   if (data && data.ok === false) throw new Error('Operación rechazada');
   return data;
 }
@@ -34,11 +44,13 @@ async function postJSON(url, body=null) {
 // Ordenamiento 
 function sortList(listEl, itemSelector) {
   const items = Array.from(listEl.querySelectorAll(itemSelector));
+  
   items.sort((a, b) => {
     const byVotes = Number(b.dataset.votes) - Number(a.dataset.votes);
     if (byVotes !== 0) return byVotes;
     return Number(b.dataset.id) - Number(a.dataset.id);
   });
+
   items.forEach(li => listEl.appendChild(li));
 }
 
@@ -47,6 +59,7 @@ document.addEventListener('click', async (e) => {
   // Voto Topic
   if (e.target.matches('.vote-topic')) {
     e.preventDefault();
+    
     if (e.target.dataset.busy) return;      // evita spam de clic
     const btn = e.target;
     const li = btn.closest('.topic');
