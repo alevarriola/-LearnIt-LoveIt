@@ -1,343 +1,243 @@
-# Microservicios con FastAPI
+# Learn It, Love It
 
-Pequeño ecosistema de **microservicios en Python** pensado para practicar:
+Pequeña aplicación web para **descubrir temas de estudio y compartir enlaces útiles**, donde cada tema y cada link puede recibir votos 👍/👎.
 
-- Diseño de servicios independientes (usuarios, ítems, órdenes).
-- Uso de **FastAPI** + **Uvicorn**.
-- Comunicación entre servicios vía HTTP con:
-  - Auth interna mediante cabecera `X-Service-Token`.
-  - Cliente HTTP con **reintentos** y **circuit breaker** simple.
-- Persistencia local con **SQLite + SQLAlchemy**.
-- Gateway HTTP que unifica el acceso desde el cliente.
+Está pensada como un proyecto **full‑stack sencillo** para practicar:
+
+- Node.js + Express
+- Plantillas EJS
+- SQLite con `better-sqlite3`
+- Un poco de JS en el navegador para votos en vivo y mejoras de UX
 
 ---
 
 ## Descripción general
 
-El proyecto está compuesto por **4 aplicaciones FastAPI**:
+**Learn It, Love It** permite:
 
-- **API Gateway** (`gateway/`): punto de entrada único. Expone `/users`, `/items` y `/orders` y reenvía las peticiones al microservicio correspondiente.
-- **Users Service** (`users-service/`): maneja usuarios (CRUD sencillo).
-- **Items Service** (`items-service/`): maneja ítems de inventario (CRUD + stock).
-- **Orders Service** (`orders-service/`): crea órdenes y coordina con `users-service` e `items-service` para validar usuario y stock.
+- Crear **temas** (por ejemplo: “Aprender Node.js”, “Dominar el arte de preparar café”).
+- Agregar **enlaces recomendados** dentro de cada tema.
+- Votar temas y enlaces para que los recursos más útiles suban primero.
+- Editar y eliminar temas y links directamente desde la interfaz.
 
-Además, hay un paquete compartido **`common/`** con:
-
-- `auth.py` – autenticación entre servicios vía header `X-Service-Token`.
-- `http.py` – cliente HTTP con **circuit breaker** y reintentos.
-- `logging.py` – logs en formato JSON con el nombre del servicio.
-
-Es un proyecto ideal para usar en clases o como base para experimentar con patrones de microservicios sin necesitar Docker ni infraestructura pesada.
+Todo se guarda en un archivo **SQLite local (`app.db`)**, creado y configurado automáticamente al iniciar la app.
 
 ---
 
-## 🏗️ Arquitectura
+## Funcionalidades
 
-```text
-[ Cliente ]
-    |
-    v
-[ API Gateway ]  (http://localhost:8080)
-   |     |        |     |         |     | 
-   v     v        v     v         v     v
-[Users Service]  [Items Service]  [Orders Service]
-   8001             8002              8003
-   users.db         items.db          orders.db
-```
+### Temas
 
-- El **Gateway** recibe todas las peticiones y las redirige usando `httpx.AsyncClient`.
-- Los servicios se hablan entre sí usando URLs internas (`USERS_SERVICE_URL`, `ITEMS_SERVICE_URL`) y agregan un token compartido en la cabecera `X-Service-Token`.
-- El módulo `common.http` mantiene un pequeño estado en memoria para saber cuántos fallos hubo contra cada host y "abrir" el circuito por unos segundos si un servicio falla demasiado.
+- Listado de todos los temas ordenados por:
+  1. Número de votos (mayor a menor)
+  2. ID (más reciente primero, en caso de empate)
+- Crear nuevos temas mediante un formulario simple.
+- Editar el título de un tema en línea.
+- Eliminar temas (se eliminan también sus enlaces asociados).
+
+### Enlaces dentro de cada tema
+
+- Para cada tema se pueden añadir uno o más **links** con:
+  - Título descriptivo
+  - URL
+- Editar título y URL de cada enlace.
+- Eliminar enlaces individualmente.
+
+### Votaciones
+
+- Votos independientes para:
+  - Temas
+  - Enlaces
+- Los votos se procesan vía `fetch` hacia rutas JSON:
+  - `POST /topics/:id/vote?dir=up|down`
+  - `POST /links/:id/vote?dir=up|down`
+- Después de votar:
+  - Se actualiza el contador en la UI.
+  - Se reordena la lista según votos (en el cliente) para reflejar el nuevo ranking.
+  - Se muestra un pequeño **“toast”** de confirmación.
+
+### UX y detalles de interfaz
+
+- Estilos modernos con una paleta clara/oscura basada en CSS custom properties.
+- Layout minimalista tipo tablero:
+  - Tarjetas para temas
+  - Listas anidadas para enlaces
+- Toast de notificación accesible (`role="status"`, `aria-live="polite"`).
+- Confirmación al eliminar temas/enlaces.
+- Limpieza básica de inputs (`trim`) antes de enviar formularios.
+- Pequeñas protecciones para evitar:
+  - Enviar formularios múltiples veces muy rápido.
+  - Hacer spam de votos con muchos clics seguidos.
 
 ---
 
 ## Stack técnico
 
-- **Lenguaje:** Python 3.11+ (recomendado)
-- **Framework web:** FastAPI
-- **Servidor ASGI:** Uvicorn
-- **Cliente HTTP:** httpx
-- **ORM:** SQLAlchemy 2.x
-- **Base de datos:** SQLite (archivos locales `data/*.db`)
-- **Validación:** Pydantic v2
-- **Scripts:** PowerShell (`run.ps1`) para levantar todo en Windows
+### Backend
 
-Dependencias clave (ver `requirements.txt`):
+- **Node.js** (ES Modules: `"type": "module"` en `package.json`)
+- **Express 4**
+- **EJS** como motor de vistas
+- **better-sqlite3** como driver sincronizado para SQLite
+- Estructura en capas:
+  - `/db.js` – conexión a SQLite + creación de tablas + datos de seed
+  - `/models/topic.js` – consultas SQL para `topics`
+  - `/models/link.js` – consultas SQL para `links`
+  - `/controllers/topicsController.js` – lógica de la app (CRUD + votos)
+  - `/routes/index.js` – definición de rutas HTTP
+  - `/app.js` – configuración principal de Express
 
-```txt
-fastapi
-uvicorn[standard]
-httpx
-sqlalchemy
-pydantic
-python-dotenv
-```
+### Frontend
+
+- HTML renderizado en servidor con **EJS** (`views/index.ejs` + partials).
+- CSS propio en `public/css/styles.css` (diseño responsive básico).
+- JavaScript en `public/js/main.js`:
+  - Manejo de votos con `fetch`.
+  - Ordenamiento de listas por votos.
+  - Notificaciones tipo toast.
+  - Confirmaciones y pequeñas mejoras de accesibilidad.
+
+### Base de datos
+
+- **SQLite** en un archivo local `app.db`.
+- Tablas:
+  - `topics(id, title, votes, created_at)`
+  - `links(id, topic_id, title, url, votes, created_at)`
+- Seed inicial (solo si la tabla está vacía):
+  - Crea algunos temas de ejemplo (por ej. “Cómo programar como un ninja”) y enlaces asociados.
 
 ---
 
 ## Estructura del proyecto
 
 ```text
-microservicios/
-├─ common/
-│  ├─ __init__.py
-│  ├─ auth.py        # Header X-Service-Token y verificación
-│  ├─ http.py        # Cliente HTTP + circuit breaker
-│  └─ logging.py     # Logs JSON con SERVICE_NAME
-│
-├─ gateway/
-│  └─ app/
-│     ├─ __init__.py
-│     ├─ main.py     # FastAPI + proxy /users, /items, /orders
-│     └─ settings.py # URLs de los servicios
-│
-├─ users-service/
-│  └─ app/
-│     ├─ __init__.py
-│     ├─ db.py       # Engine SQLite data/users.db
-│     ├─ models.py   # Modelo User
-│     ├─ crud.py     # Operaciones sobre usuarios
-│     └─ routers.py  # Endpoints FastAPI
-│
-├─ items-service/
-│  └─ app/
-│     ├─ __init__.py
-│     ├─ db.py       # Engine SQLite data/items.db
-│     ├─ models.py   # Modelo Item
-│     ├─ crud.py     # Operaciones sobre ítems y stock
-│     └─ routers.py  # Endpoints FastAPI (CRUD + endpoints internos)
-│
-├─ orders-service/
-│  └─ app/
-│     ├─ __init__.py
-│     ├─ db.py       # Engine SQLite data/orders.db
-│     ├─ models.py   # Modelo Order
-│     ├─ crud.py     # Creación y listado de órdenes
-│     └─ routers.py  # Endpoints FastAPI, orquestación de usuarios/ítems
-│
-├─ requirements.txt
-└─ run.ps1           # Script para levantar todo en Windows
+-LearnIt-LoveIt-main/
+├─ app.js                # Configuración de Express y arranque del servidor
+├─ db.js                 # Conexión SQLite + creación de tablas + seed
+├─ package.json          # Dependencias y scripts
+├─ package-lock.json
+├─ controllers/
+│  └─ topicsController.js# Lógica de control: CRUD y votos
+├─ models/
+│  ├─ topic.js           # Modelo Topic (consultas sobre topics)
+│  └─ link.js            # Modelo Link (consultas sobre links)
+├─ routes/
+│  └─ index.js           # Definición de rutas HTTP
+├─ public/
+│  ├─ css/
+│  │  └─ styles.css      # Estilos globales
+│  └─ js/
+│     └─ main.js         # Lógica de UI (votos, toasts, etc.)
+└─ views/
+   ├─ index.ejs          # Página principal
+   └─ partials/
+      ├─ header.ejs      # Head + apertura de <body>
+      └─ footer.ejs      # Cierre de <main> + scripts
 ```
 
 ---
 
-## ⚙Configuración
-
-### Variables de entorno
-
-Algunos valores se pueden configurar vía variables de entorno:
-
-- `SERVICE_SECRET`  
-  Token compartido entre servicios.  
-  - Por defecto: `"dev-secret"`.
-  - Se usa para:
-    - Firmar el header `X-Service-Token` en llamadas entre servicios (`add_service_auth`).
-    - Validar el token entrante (`verify_service_token`).
-
-- `USERS_SERVICE_URL`, `ITEMS_SERVICE_URL`, `ORDERS_SERVICE_URL`  
-  URLs internas de cada servicio.  
-  - Por defecto (modo local):
-    - `USERS_SERVICE_URL = http://127.0.0.1:8001`
-    - `ITEMS_SERVICE_URL = http://127.0.0.1:8002`
-    - `ORDERS_SERVICE_URL = http://127.0.0.1:8003`
-
-El **Gateway** y el **Orders Service** leen estas URLs para saber a dónde llamar.
-
-Puedes crear un archivo `.env` en la raíz (o configurar las variables en tu sistema) si querés usar otros puertos o nombres de host.
-
----
-
-## Puesta en marcha (local)
+## Puesta en marcha
 
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <URL-del-repo>
-cd microservicios-main
+git clone https://github.com/alevarriola/LearnIt-LoveIt.git
+cd LearnIt-LoveIt
 ```
 
-> Si lo descargaste como ZIP, el directorio puede llamarse algo como `microservicios-main/`.
+> Si el nombre del directorio es distinto (por ejemplo `-LearnIt-LoveIt-main` al descargar como ZIP), ajustá el `cd` según corresponda.
 
-### 2. Crear entorno virtual
+### 2. Instalar dependencias
 
 ```bash
-python -m venv .venv
-
-# En Linux/macOS
-source .venv/bin/activate
-
-# En Windows (PowerShell)
-.\.venv\Scripts\Activate.ps1
+npm install
 ```
 
-### 3. Instalar dependencias
+Esto instalará:
+
+- `express`
+- `ejs`
+- `better-sqlite3`
+- `nodemon` (como devDependency)
+
+### 3. Ejecutar la app
+
+#### Opción A — Desarrollo (con recarga mediante nodemon)
 
 ```bash
-pip install -r requirements.txt
+npm run dev
 ```
 
-### 4. Levantar los servicios
-
-#### Opción A — Windows (PowerShell) con `run.ps1`
+#### Opción B — Producción simple
 
 ```bash
-.
-un.ps1
+npm start
 ```
 
-El script:
+Por defecto, la app escucha en:
 
-- Activa `.venv`.
-- Abre 4 ventanas de PowerShell, cada una ejecutando:
+- `http://localhost:3000`
 
-  - `uvicorn users-service.app.main:app --reload --port 8001`
-  - `uvicorn items-service.app.main:app --reload --port 8002`
-  - `uvicorn orders-service.app.main:app --reload --port 8003`
-  - `uvicorn gateway.app.main:app --reload --port 8080`
+La primera vez que se ejecuta:
 
-#### Opción B — Manual (cualquier sistema)
-
-En 4 terminales distintas:
-
-```bash
-# 1) Users Service
-uvicorn users-service.app.main:app --reload --port 8001
-
-# 2) Items Service
-uvicorn items-service.app.main:app --reload --port 8002
-
-# 3) Orders Service
-uvicorn orders-service.app.main:app --reload --port 8003
-
-# 4) API Gateway
-uvicorn gateway.app.main:app --reload --port 8080
-```
+- Se crea el archivo `app.db` en el directorio raíz.
+- Se crean automáticamente las tablas `topics` y `links`.
+- Si la tabla `topics` está vacía, se insertan algunos datos de ejemplo.
 
 ---
 
-## Salud de servicios
+## Uso básico
 
-Cada servicio expone un endpoint de health-check:
+1. Abrí tu navegador en `http://localhost:3000`.
+2. En la parte superior, creá un **nuevo tema** (por ejemplo: “Aprender JavaScript desde cero”).
+3. Dentro de cada tema, desplegá la sección **“Enlaces”** y:
+   - Agregá links con título + URL.
+   - Editá o eliminá los links según sea necesario.
+4. Usá los botones de **voto**:
+   - Para temas.
+   - Para enlaces.
+5. Observá cómo:
+   - Los contadores de ★ se actualizan en vivo.
+   - Los temas y enlaces se reordenan por popularidad.
 
-- Gateway: `GET http://localhost:8080/health`
-- Users Service: `GET http://localhost:8001/health`
-- Items Service: `GET http://localhost:8002/health`
-- Orders Service: `GET http://localhost:8003/health`
-
-Además, en `startup` cada servicio loguea un evento `service.started` en formato JSON (útil si luego se envía a un sistema de logs centralizado).
-
----
-
-## Auth entre servicios
-
-El módulo `common/auth.py` implementa **autenticación simple de servicio a servicio**:
-
-- Función `add_service_auth(headers)`:
-  - Devuelve una copia de los headers agregando `"X-Service-Token": SERVICE_SECRET`.
-  - La usa el Gateway y el Orders Service antes de llamar a otros servicios.
-
-- Función `verify_service_token(...)`:
-  - Se declara como dependencia en los routers que deben ser accedidos sólo por otros servicios.
-  - Si el header no coincide con `SERVICE_SECRET`, lanza un `HTTPException(401)`.
-
-Esto permite que ciertos endpoints (por ejemplo, los que modifican stock) no estén expuestos a clientes externos, sólo a otros microservicios confiables.
+Este flujo lo hace ideal como demo en clase o como mini‑herramienta personal para curar contenido de estudio.
 
 ---
 
-## Gateway HTTP
+## Rutas principales (resumen)
 
-El **API Gateway** (`gateway/app/main.py`) expone:
+### Vistas
 
-- `GET /` → mensaje simple `"Gateway listo"`.
-- `GET /health` → estado del gateway.
-- Rutas proxy:
-  - `/users{path:path}` → hacia `USERS_SERVICE_URL`.
-  - `/items{path:path}` → hacia `ITEMS_SERVICE_URL`.
-  - `/orders{path:path}` → hacia `ORDERS_SERVICE_URL`.
+- `GET /`
+  - Renderiza la página principal con todos los temas y sus enlaces.
 
-La función interna `_proxy`:
+### CRUD de temas
 
-1. Lee método, headers, body y query string del request.
-2. Agrega el header `X-Service-Token` con `add_service_auth`.
-3. Llama al servicio correspondiente con `httpx.AsyncClient`.
-4. Devuelve al cliente final la respuesta (status code, body y `content-type` original).
+- `POST /topics`
+  - Crea un tema nuevo.
+- `POST /topics/:id/edit`
+  - Actualiza el título de un tema.
+- `POST /topics/:id/delete`
+  - Elimina un tema y sus enlaces.
 
-Desde el punto de vista del cliente, todo se maneja contra `http://localhost:8080`.
+### CRUD de enlaces
 
----
+- `POST /links`
+  - Crea un enlace asociado a un tema.
+- `POST /links/:id/edit`
+  - Actualiza título y URL de un enlace.
+- `POST /links/:id/delete`
+  - Elimina un enlace.
 
-## Servicios
+### Votaciones (JSON)
 
-### Users Service (`users-service`)
-
-- Base de datos: `sqlite:///data/users.db`.
-- Modelo `User`:
-  - `id: int`
-  - `name: str`
-  - `email: str` (único)
-- Endpoints principales (resumen):
-
-  - `GET /users/` – listar usuarios.
-  - `POST /users/` – crear usuario.
-  - `GET /users/{user_id}` – obtener usuario por id.
-  - `PUT /users/{user_id}` – actualizar nombre/email.
-  - `DELETE /users/{user_id}` – eliminar usuario.
-
-- Validaciones:
-  - Email único (si se repite, devuelve 409).
-  - Errores de "no encontrado" devuelven 404.
-
-### Items Service (`items-service`)
-
-- Base de datos: `sqlite:///data/items.db`.
-- Modelo `Item`:
-  - `id: int`
-  - `name: str`
-  - `sku: str` (único)
-  - `stock: int`
-- Endpoints (resumen):
-
-  - `GET /items/` – listar ítems.
-  - `POST /items/` – crear ítem.
-  - `GET /items/{item_id}` – obtener ítem por id.
-  - `PUT /items/{item_id}` – actualizar nombre/sku/stock.
-  - `DELETE /items/{item_id}` – eliminar ítem.
-  - (Más endpoints internos protegidos por `verify_service_token` para validar y reservar stock desde otros servicios).
-
-- Validaciones:
-  - SKU único (409 si se repite).
-  - Manejo de 404 para ítems inexistentes.
-
-### Orders Service (`orders-service`)
-
-- Base de datos: `sqlite:///data/orders.db`.
-- Modelo `Order`:
-  - `id: int`
-  - `user_id: int`
-  - `item_sku: str`
-  - `qty: int`
-  - `status: str` (por defecto `"CREATED"`)
-
-- Endpoints (resumen):
-
-  - `GET /orders/` – listar órdenes.
-  - `POST /orders/` – crear nueva orden (punto interesante):
-
-    1. Llama al **Users Service** para verificar que el usuario exista.
-    2. Llama al **Items Service** para chequear stock del SKU y reservarlo.
-    3. Si todo sale bien, crea el registro en la base de datos local.
-    4. Loguea eventos JSON (`order.created`, `user.not_found`, `item.no_stock`, etc.).
-
-- En caso de problemas:
-  - Usuario inexistente → 404.
-  - Ítem inexistente → 404.
-  - Stock insuficiente → 409.
-  - Cualquier otro error → 400 con detalle.
-
-- Las llamadas HTTP a otros servicios utilizan el módulo `common.http`, que implementa:
-  - Reintentos con pequeño backoff.
-  - Contador de fallos por host.
-  - "Circuit breaker" que deja de llamar a un servicio unos segundos si falló muchas veces seguidas.
+- `POST /topics/:id/vote?dir=up|down`
+  - Incrementa o decrementa los votos de un tema.
+  - Respuesta JSON: `{ ok: true, topic: { ... } }`
+- `POST /links/:id/vote?dir=up|down`
+  - Incrementa o decrementa los votos de un enlace.
+  - Respuesta JSON: `{ ok: true, link: { ... } }`
 
 ---
 
